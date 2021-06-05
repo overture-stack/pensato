@@ -24,7 +24,7 @@ auth:
 
 This is a simple auth scheme that uses users configured in the application configuration.
 
-Passwords are SHA256 hashes. When generating your own ensure you stip newlines. For example:
+Passwords are SHA256 hashes. When generating your own ensure you strip newlines. For example:
 ```bash
 echo -n mynewpass | sha256sum
 ```
