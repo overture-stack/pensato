@@ -8,9 +8,13 @@ The default auth is a No Login authenticator that rejects all users.
 This is a safe default and requires no configuration.
 
 ### Simple
+This is a simple auth scheme that uses users configured in the application configuration.
+Passwords are SHA256 hashes. When generating your own ensure you strip newlines. See example below.
+
 ```
 -Dspring.profiles.active=simple
 ```
+
 ```yaml
 auth:
   simple:
@@ -22,18 +26,17 @@ auth:
         password: baa5a0964d3320fbc0c6a922140453c8513ea24ab8fd0577034804a967248096
 ```
 
-This is a simple auth scheme that uses users configured in the application configuration.
-
-Passwords are SHA256 hashes. When generating your own ensure you strip newlines. For example:
 ```bash
 echo -n mynewpass | sha256sum
 ```
 
 ### Ego
+Pensato can be configured as a client of Ego. Users login with their emails and API Keys.
+
+
 ```
 -Dspring.profiles.active=simple
 ```
-Pensato can be configured as a client of Ego. Users login with their emails and API Keys.
 
 ```yaml
 auth:
