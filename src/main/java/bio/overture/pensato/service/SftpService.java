@@ -14,12 +14,12 @@ import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service
-public class SftpServer {
+public class SftpService {
 
   private final PasswordAuthenticator passwordAuthenticator;
 
   @Autowired
-  public SftpServer(PasswordAuthenticator passwordAuthenticator) {
+  public SftpService(PasswordAuthenticator passwordAuthenticator) {
     this.passwordAuthenticator = passwordAuthenticator;
   }
 
