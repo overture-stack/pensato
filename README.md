@@ -8,7 +8,6 @@ The default auth is a No Login authenticator that rejects all users.
 This is a safe default and requires no configuration.
 
 ### Simple
-#### Usage
 ```
 -Dspring.profiles.active=simple
 ```
