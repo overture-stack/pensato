@@ -5,6 +5,4 @@ import org.springframework.context.annotation.Profile;
 
 @Profile("localdir")
 @Configuration
-public class LocalDirConfig {
-
-}
+public class LocalDirConfig {}

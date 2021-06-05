@@ -9,5 +9,4 @@ public class PensatoApplication {
   public static void main(String[] args) {
     SpringApplication.run(PensatoApplication.class, args);
   }
-
 }

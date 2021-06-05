@@ -1,5 +1,8 @@
 package bio.overture.pensato.service;
 
+import java.io.File;
+import java.util.Collections;
+import javax.annotation.PostConstruct;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.sshd.server.SshServer;
@@ -8,10 +11,6 @@ import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
 import org.apache.sshd.server.subsystem.sftp.SftpSubsystemFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import javax.annotation.PostConstruct;
-import java.io.File;
-import java.util.Collections;
 
 @Slf4j
 @Service

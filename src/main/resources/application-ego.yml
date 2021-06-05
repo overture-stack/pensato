@@ -1,0 +1,9 @@
+auth:
+  ego:
+    clientId: pensato
+    clientSecret: pensatotest
+    introspectionUri: https://ego.dev.argo.cancercollaboratory.org/api/o/check_api_key
+    userInfoUri: https://ego.dev.argo.cancercollaboratory.org/api/users
+    scopes:
+      - DACO.READ
+      - WG.WRITE
