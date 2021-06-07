@@ -3,3 +3,9 @@ server:
   compression:
     enabled: true
     mime-types: application/json
+
+sftp:
+  port: 2222
+
+fs:
+  localDir: /tmp
