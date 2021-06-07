@@ -1,11 +1,10 @@
 package bio.overture.pensato.config.fs;
 
 import com.google.common.collect.ImmutableMap;
+import com.upplication.s3fs.AmazonS3Factory;
 import java.net.URI;
 import java.nio.file.FileSystems;
 import java.util.Map;
-
-import com.upplication.s3fs.AmazonS3Factory;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.SneakyThrows;
@@ -28,6 +27,7 @@ public class S3Config {
   @Getter @Setter private String accessKey;
   @Getter @Setter private String secretKey;
   @Getter @Setter private String bucket;
+  @Getter @Setter private String dir;
 
   @SneakyThrows
   @Bean
@@ -36,7 +36,9 @@ public class S3Config {
         ImmutableMap.<String, Object>builder()
             .put(AmazonS3Factory.ACCESS_KEY, accessKey)
             .put(AmazonS3Factory.SECRET_KEY, secretKey)
-            // .put(AmazonS3Factory.ENDPOINT_URL, endpoint)
+            .put(AmazonS3Factory.PATH_STYLE_ACCESS, true)
+            .put(AmazonS3Factory.SIGNER_OVERRIDE, "AWSS3V4SignerType")
+            .put(AmazonS3Factory.ENDPOINT_URL, endpoint)
             .build();
 
     val fs =
@@ -44,7 +46,6 @@ public class S3Config {
             URI.create("s3:///"), env, Thread.currentThread().getContextClassLoader());
 
     log.info(bucket);
-    val factory = new VirtualFileSystemFactory(fs.getPath("/" + bucket + "/data"));
-    return factory;
+    return new VirtualFileSystemFactory(fs.getPath("/" + bucket + "/" + dir + "/"));
   }
 }

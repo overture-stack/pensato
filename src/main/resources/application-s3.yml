@@ -1,6 +1,7 @@
 fs:
   s3:
-    endpoint: http://localhost:9000
+    endpoint: https://localhost:9000
     accessKey: admin
     secretKey: password
     bucket: pensato
+    dir: sftp
