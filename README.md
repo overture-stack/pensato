@@ -7,6 +7,12 @@
             src="http://www.overture.bio/img/progress-horizontal-beta.svg" width="320" />
     </a>
 </p>
+<p align="center">
+    <img src="https://img.shields.io/badge/Platform-Linux--AMD64-green">
+    <img src="https://img.shields.io/badge/Platform-Linux--ARM64-green">
+    <img src="https://img.shields.io/badge/Platform-macOS--Universal64-green">
+</p>
+
 
 ## Introduction
 Pensato is a microservice written in Java 11 + Spring Boot for providing SFTP and eventually SCP server
@@ -107,3 +113,24 @@ fs:
 #### HDFS
 :construction: Under Construction :construction:
 
+## Run
+
+### Maven
+The Spring Boot maven plugin can be use to run the application.
+```
+mvn spring-boot:run
+```
+
+### Jar
+The build process produces an uber/fat JAR file that can be run.
+```
+java -jar target/pensato-<version>-exec.jar
+```
+
+### Dist
+A dist with the java service wrapper and associated helper scripts is produced. 
+```shell
+tar zxvf target/pensato-<version>-dist.tar.gz
+cd target/pensato-<version>
+bin/pensato start
+```
