@@ -100,6 +100,7 @@ on amazon, or provided by something like Ceph or Minio.
 ```yaml
 fs:
   s3:
+    overrideEndpoint: false # when overriding endpoint it will trigger path based access
     endpoint: https://localhost:9000
     accessKey: admin
     secretKey: password
