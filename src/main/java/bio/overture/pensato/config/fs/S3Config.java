@@ -4,7 +4,6 @@ import com.google.common.collect.ImmutableMap;
 import com.upplication.s3fs.AmazonS3Factory;
 import java.net.URI;
 import java.nio.file.FileSystems;
-import java.util.Map;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.SneakyThrows;
@@ -23,6 +22,7 @@ import org.springframework.context.annotation.Profile;
 @ConfigurationProperties(prefix = "fs.s3")
 public class S3Config {
 
+  @Getter @Setter private boolean overrideEndpoint;
   @Getter @Setter private String endpoint;
   @Getter @Setter private String accessKey;
   @Getter @Setter private String secretKey;
@@ -32,14 +32,17 @@ public class S3Config {
   @SneakyThrows
   @Bean
   public FileSystemFactory getFileSystemFactory() {
-    Map<String, ?> env =
+    val envBuilder =
         ImmutableMap.<String, Object>builder()
             .put(AmazonS3Factory.ACCESS_KEY, accessKey)
-            .put(AmazonS3Factory.SECRET_KEY, secretKey)
-            .put(AmazonS3Factory.PATH_STYLE_ACCESS, true)
-            .put(AmazonS3Factory.SIGNER_OVERRIDE, "AWSS3V4SignerType")
-            .put(AmazonS3Factory.ENDPOINT_URL, endpoint)
-            .build();
+            .put(AmazonS3Factory.SECRET_KEY, secretKey);
+    if (overrideEndpoint) {
+      envBuilder
+          .put(AmazonS3Factory.PATH_STYLE_ACCESS, true)
+          .put(AmazonS3Factory.SIGNER_OVERRIDE, "AWSS3V4SignerType")
+          .put(AmazonS3Factory.ENDPOINT_URL, endpoint);
+    }
+    val env = envBuilder.build();
 
     val fs =
         FileSystems.newFileSystem(

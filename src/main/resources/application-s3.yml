@@ -1,5 +1,6 @@
 fs:
   s3:
+    overrideEndpoint: false
     endpoint: https://localhost:9000
     accessKey: admin
     secretKey: password
