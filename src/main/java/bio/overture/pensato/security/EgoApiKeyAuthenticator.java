@@ -84,7 +84,8 @@ public class EgoApiKeyAuthenticator implements PasswordAuthenticator {
 
       return true;
     } catch (Exception e) {
-      log.error("Exception during apiKey introspection.", e);
+      log.warn("Exception during apiKey introspection: {}", e.getMessage());
+      log.debug("Stacktrace for exception:", e);
       return false;
     }
   }
@@ -105,7 +106,8 @@ public class EgoApiKeyAuthenticator implements PasswordAuthenticator {
 
       return email.equals(response.getBody().path("email").asText());
     } catch (Exception e) {
-      log.error("Exception during ego user validation.", e);
+      log.error("Exception during ego user validation: {}", e.getMessage());
+      log.debug("Stacktrace for exception", e);
       return false;
     }
   }

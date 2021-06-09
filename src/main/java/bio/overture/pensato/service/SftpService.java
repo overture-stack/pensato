@@ -1,7 +1,7 @@
 package bio.overture.pensato.service;
 
+import bio.overture.pensato.listener.LoggingSftpListener;
 import java.io.File;
-import java.io.IOException;
 import java.util.Collections;
 import javax.annotation.PostConstruct;
 import lombok.SneakyThrows;
@@ -11,9 +11,6 @@ import org.apache.sshd.common.file.FileSystemFactory;
 import org.apache.sshd.server.SshServer;
 import org.apache.sshd.server.auth.password.PasswordAuthenticator;
 import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
-import org.apache.sshd.server.session.ServerSession;
-import org.apache.sshd.server.subsystem.sftp.Handle;
-import org.apache.sshd.server.subsystem.sftp.SftpEventListener;
 import org.apache.sshd.server.subsystem.sftp.SftpSubsystemFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,6 +23,8 @@ public class SftpService {
   private final PasswordAuthenticator passwordAuthenticator;
   private final FileSystemFactory fileSystemFactory;
   private final int port;
+
+  private SshServer sshd;
 
   @Autowired
   public SftpService(
@@ -42,12 +41,16 @@ public class SftpService {
     start();
   }
 
+  public boolean isRunning() {
+    return sshd.isOpen();
+  }
+
   @SneakyThrows
   private void start() {
-    SshServer sshd = SshServer.setUpDefaultServer();
+    sshd = SshServer.setUpDefaultServer();
 
     val sftpFactory = new SftpSubsystemFactory();
-    sftpFactory.addSftpEventListener(new SftpSetupListener());
+    sftpFactory.addSftpEventListener(new LoggingSftpListener());
 
     sshd.setPort(port);
     sshd.setKeyPairProvider(new SimpleGeneratorHostKeyProvider(new File("host.ser")));
@@ -56,19 +59,5 @@ public class SftpService {
     sshd.setFileSystemFactory(fileSystemFactory);
     sshd.start();
     log.info("SFTP server started on port {}", sshd.getPort());
-  }
-
-  private class SftpSetupListener implements SftpEventListener {
-
-    @Override
-    public void initialized(ServerSession session, int version) {
-      log.info(session.toString());
-    }
-
-    @Override
-    public void open(ServerSession session, String remoteHandle, Handle localHandle)
-        throws IOException {
-      log.info(session.toString());
-    }
   }
 }
