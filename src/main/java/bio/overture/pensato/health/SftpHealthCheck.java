@@ -1,6 +1,6 @@
 package bio.overture.pensato.health;
 
-import bio.overture.pensato.service.SftpService;
+import bio.overture.pensato.service.SshdService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
@@ -11,16 +11,16 @@ public class SftpHealthCheck implements HealthIndicator {
 
   private static final String MESSAGE_KEY = "sshd";
 
-  private final SftpService sftpService;
+  private final SshdService sshdService;
 
   @Autowired
-  public SftpHealthCheck(SftpService sftpService) {
-    this.sftpService = sftpService;
+  public SftpHealthCheck(SshdService sshdService) {
+    this.sshdService = sshdService;
   }
 
   @Override
   public Health health() {
-    if (sftpService.isRunning()) {
+    if (sshdService.isRunning()) {
       return Health.up().withDetail(MESSAGE_KEY, "SSHD is running.").build();
     } else {
       return Health.down().withDetail(MESSAGE_KEY, "SSHD is down.").build();

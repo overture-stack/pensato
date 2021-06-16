@@ -15,7 +15,7 @@
 
 
 ## Introduction
-Pensato is a microservice written in Java 11 + Spring Boot for providing SFTP and eventually SCP server
+Pensato is a microservice written in Java 11 + Spring Boot for providing SFTP and SCP server
 functionality. It leverages Apache MINA as the underlying SSH library and the Java NIO FileSystem
 APIs for providing the backing storage.
 
@@ -113,6 +113,23 @@ fs:
 
 #### HDFS
 :construction: Under Construction :construction:
+
+### SCP Configuration
+SCP command support can be enabled with the `scp` run profile. 
+```
+-Dspring.profiles.active=scp
+```
+Because of how SCP commands are reported by Apache MINA, it is highly recommend that if auditing of the SCP commands
+is required that appropriate log settings be set. This is so username and file operations can be seen together.  
+```yaml
+logging:
+  level:
+    org.apache.sshd.common.scp: DEBUG
+```
+
+```
+2021-06-16 12:12:57.244 DEBUG 78597 --- [ft.mp4-thread-1] org.apache.sshd.common.scp.ScpHelper     : sendStream(ScpHelper[ServerSessionImpl[username@example.com@/127.0.0.1:56982]])[/filename.mp4] command='C0700 16488414 filename.mp' ready code=0
+```
 
 ## Run
 
