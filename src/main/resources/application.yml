@@ -4,6 +4,10 @@ server:
     enabled: true
     mime-types: application/json
 
+logging:
+  level:
+    org.apache.sshd.common.scp: DEBUG
+
 sftp:
   port: 2222
 
