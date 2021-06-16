@@ -45,34 +45,39 @@ public class EgoApiKeyAuthenticator implements PasswordAuthenticator {
     return result;
   }
 
-  // FIXME: THIS IS UGLY!!!! FIX!!!!
+  /**
+   * Checks token and email against against Ego
+   * @param email Email provided by the user during authorization
+   * @param token API Key that will be introspected by Ego
+   * @return returns true if email and token are associated, and token contains valid scopes. False otherwise.
+   */
   private boolean introspect(String email, String token) {
     try {
-      // Do Token Introspection and check status
-      HttpHeaders headers = new HttpHeaders();
-      headers.setBasicAuth(egoProperties.getClientId(), egoProperties.getClientSecret());
-      val httpEntity = new HttpEntity<Void>(null, headers);
       val template = new RestTemplate();
       val response =
           template.postForEntity(
-              egoProperties.getIntrospectionUri() + "?apiKey=" + token, httpEntity, JsonNode.class);
+              egoProperties.getIntrospectionUri() + "?apiKey=" + token, setupHttpEntity(egoProperties), JsonNode.class);
 
+      // Response is okay
       if ((response.getStatusCode() != HttpStatus.OK
               && response.getStatusCode() != HttpStatus.MULTI_STATUS)
-          || response.getBody() == null) {
+          || !response.hasBody()) {
         return false;
       }
 
+      // User and Token are associated to each other in ego
       var isValidUserForToken = validateUser(email, response.getBody().path("user_id").asText());
       if (!isValidUserForToken) {
         return false;
       }
 
+      // Token is correctly structured
       val scopeJsonNode = response.getBody().path("scope");
       if (scopeJsonNode.isMissingNode()) {
         return false;
       }
 
+      // Token contains all required scopes
       val scopesArrayNode = (ArrayNode) scopeJsonNode;
       val scopes = new ArrayList<String>();
       scopesArrayNode.forEach(jsonNode -> scopes.add(jsonNode.asText()));
@@ -90,18 +95,20 @@ public class EgoApiKeyAuthenticator implements PasswordAuthenticator {
     }
   }
 
-  // FIXME: ALSO UGLY!!!!
+  /**
+   * Validates that the provided email belongs to the user
+   * @param email User provided email
+   * @param userId UserId obtained from an access token
+   * @return True if valid, false otherwise
+   */
   private boolean validateUser(String email, String userId) {
     try {
-      HttpHeaders headers = new HttpHeaders();
-      headers.setBasicAuth(egoProperties.getClientId(), egoProperties.getClientSecret());
-      val httpEntity = new HttpEntity<Void>(null, headers);
       val template = new RestTemplate();
       val response =
           template.exchange(
               egoProperties.getUserInfoUri() + "/" + userId,
               HttpMethod.GET,
-              httpEntity,
+              setupHttpEntity(egoProperties),
               JsonNode.class);
 
       return email.equals(response.getBody().path("email").asText());
@@ -110,5 +117,11 @@ public class EgoApiKeyAuthenticator implements PasswordAuthenticator {
       log.debug("Stacktrace for exception", e);
       return false;
     }
+  }
+
+  private static HttpEntity<Void> setupHttpEntity(EgoProperties properties) {
+    HttpHeaders headers = new HttpHeaders();
+    headers.setBasicAuth(properties.getClientId(), properties.getClientSecret());
+    return new HttpEntity<Void>(null, headers);
   }
 }
