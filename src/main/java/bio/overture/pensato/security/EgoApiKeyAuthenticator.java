@@ -47,16 +47,20 @@ public class EgoApiKeyAuthenticator implements PasswordAuthenticator {
 
   /**
    * Checks token and email against against Ego
+   *
    * @param email Email provided by the user during authorization
    * @param token API Key that will be introspected by Ego
-   * @return returns true if email and token are associated, and token contains valid scopes. False otherwise.
+   * @return returns true if email and token are associated, and token contains valid scopes. False
+   *     otherwise.
    */
   private boolean introspect(String email, String token) {
     try {
       val template = new RestTemplate();
       val response =
           template.postForEntity(
-              egoProperties.getIntrospectionUri() + "?apiKey=" + token, setupHttpEntity(egoProperties), JsonNode.class);
+              egoProperties.getIntrospectionUri() + "?apiKey=" + token,
+              setupHttpEntity(egoProperties),
+              JsonNode.class);
 
       // Response is okay
       if ((response.getStatusCode() != HttpStatus.OK
@@ -97,6 +101,7 @@ public class EgoApiKeyAuthenticator implements PasswordAuthenticator {
 
   /**
    * Validates that the provided email belongs to the user
+   *
    * @param email User provided email
    * @param userId UserId obtained from an access token
    * @return True if valid, false otherwise
