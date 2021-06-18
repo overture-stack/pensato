@@ -103,10 +103,7 @@ spec:
                     withCredentials([usernamePassword(credentialsId:'OvertureBioGithub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
                         sh "docker login ${gitHubRegistry} -u $USERNAME -p $PASSWORD"
                     }
-                    sh "docker build --target=server --network=host -f Dockerfile . -t ${gitHubRegistry}/${gitHubRepo}-server:edge -t ${gitHubRegistry}/${gitHubRepo}-server:${commit}"
-                    sh "docker build --target=client --network=host -f Dockerfile . -t ${gitHubRegistry}/${gitHubRepo}:edge -t ${gitHubRegistry}/${gitHubRepo}:${commit}"
-                    sh "docker push ${gitHubRegistry}/${gitHubRepo}-server:${commit}"
-                    sh "docker push ${gitHubRegistry}/${gitHubRepo}-server:edge"
+                    sh "docker build --network=host -f Dockerfile . -t ${gitHubRegistry}/${gitHubRepo}:edge -t ${gitHubRegistry}/${gitHubRepo}:${commit}"
                     sh "docker push ${gitHubRegistry}/${gitHubRepo}:${commit}"
                     sh "docker push ${gitHubRegistry}/${gitHubRepo}:edge"
                 }
@@ -128,10 +125,7 @@ spec:
                     withCredentials([usernamePassword(credentialsId:'OvertureBioGithub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
                         sh "docker login ${gitHubRegistry} -u $USERNAME -p $PASSWORD"
                     }
-                    sh "docker build --target=server --network=host -f Dockerfile . -t ${gitHubRegistry}/${gitHubRepo}-server:latest -t ${gitHubRegistry}/${gitHubRepo}-server:${version}"
-                    sh "docker build --target=client --network=host -f Dockerfile . -t ${gitHubRegistry}/${gitHubRepo}:latest -t ${gitHubRegistry}/${gitHubRepo}:${version}"
-                    sh "docker push ${gitHubRegistry}/${gitHubRepo}-server:${version}"
-                    sh "docker push ${gitHubRegistry}/${gitHubRepo}-server:latest"
+                    sh "docker build --network=host -f Dockerfile . -t ${gitHubRegistry}/${gitHubRepo}:latest -t ${gitHubRegistry}/${gitHubRepo}:${version}"
                     sh "docker push ${gitHubRegistry}/${gitHubRepo}:${version}"
                     sh "docker push ${gitHubRegistry}/${gitHubRepo}:latest"
                 }
@@ -170,9 +164,7 @@ spec:
             when {
                 anyOf {
                     branch 'master'
-                    branch 'test-master'
                     branch 'develop'
-                    branch 'test-develop'
                 }
             }
             steps {
@@ -180,22 +172,9 @@ spec:
 
                     project = "pensato"
                     versionName = "$version"
-                    subProjects = ['client', 'core', 'fs', 'server', 'test']
 
                     files = []
                     files.add([pattern: "pom.xml", target: "$repo/$project/$versionName/$project-${versionName}.pom"])
-
-                    for (s in subProjects) {
-                        name = "${project}-$s"
-                        target = "$repo/$name/$versionName/$name-$versionName"
-                        files.add(pom(name, target))
-                        files.add(jar(name, target))
-
-                        if (s in ['client', 'server']) {
-                            files.add(runjar(name, target))
-                            files.add(tar(name, target))
-                        }
-                    }
 
                     fileSet = JsonOutput.toJson([files: files])
                     pretty = JsonOutput.prettyPrint(fileSet)
