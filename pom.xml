@@ -10,7 +10,7 @@
     </parent>
     <groupId>bio.overture</groupId>
     <artifactId>pensato</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>0.1.0</version>
     <name>pensato</name>
     <description>Simple SFTP server with optional Ego Authorization</description>
     <properties>
