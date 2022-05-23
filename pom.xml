@@ -78,6 +78,13 @@
             <artifactId>jaxb-runtime</artifactId>
             <version>2.3.2</version>
         </dependency>
+
+        <!-- Json Web Tokens -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt</artifactId>
+            <version>0.8.0</version>
+        </dependency>
     </dependencies>
 
     <build>

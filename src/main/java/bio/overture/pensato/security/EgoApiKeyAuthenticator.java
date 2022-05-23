@@ -5,6 +5,12 @@ import bio.overture.pensato.config.auth.EgoConfig.EgoProperties;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import java.util.ArrayList;
+import java.util.Optional;
+
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.MalformedJwtException;
+import io.jsonwebtoken.SignatureException;
+import io.jsonwebtoken.impl.DefaultJwtParser;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.apache.sshd.server.auth.password.PasswordAuthenticator;
@@ -12,12 +18,10 @@ import org.apache.sshd.server.auth.password.PasswordChangeRequiredException;
 import org.apache.sshd.server.session.ServerSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 
 @Slf4j
 @Profile("ego")
@@ -25,6 +29,9 @@ import org.springframework.web.client.RestTemplate;
 public class EgoApiKeyAuthenticator implements PasswordAuthenticator {
 
   private final EgoProperties egoProperties;
+
+  // Application JWT providing auth to introspect the API Keys on requests
+  private static String egoToken;
 
   @Autowired
   public EgoApiKeyAuthenticator(EgoConfig config) {
@@ -46,7 +53,73 @@ public class EgoApiKeyAuthenticator implements PasswordAuthenticator {
   }
 
   /**
-   * Checks token and email against against Ego
+   * Returns the stored ego token if it has not expired. If expired, it will fetch a new token from Ego.
+   * @return
+   */
+  private Optional<String> getEgoToken() {
+    return isStoredEgoTokenValid() ? Optional.of(egoToken) : fetchApplicationJwt();
+  }
+
+  private boolean isStoredEgoTokenValid() {
+    if(egoToken == null) {
+      log.debug("No stored Ego token.");
+      return false;
+    }
+
+    try {
+      // Attempt to parse stored ego token. If it is expired, an error will be thrown, otherwise it should be usable.
+      DefaultJwtParser parser = new DefaultJwtParser();
+      parser.parse(egoToken);
+      return true;
+    } catch (ExpiredJwtException expired) {
+      log.debug("Stored access token has expired.");
+      return false;
+    } catch (MalformedJwtException malformed) {
+      // Should never occur if ego working normally.
+      log.warn("Stored EGO token is malfored!");
+      log.warn(malformed.getMessage());
+      return false;
+    } catch (SignatureException invalidSignature) {
+      // Should never occur if ego working normally.
+      log.warn("Stored Ego token has invalid signature!");
+      log.warn(invalidSignature.getMessage());
+      return false;
+    }
+  }
+
+  private Optional<String> fetchApplicationJwt() {
+    try {
+      val restTemplate = new RestTemplate();
+
+      val requestUri = UriComponentsBuilder
+              .fromHttpUrl(egoProperties.getEgoApiRootUrl())
+              .path("/oauth/token")
+              .queryParam("grant_type", "client_credentials")
+              .queryParam("client_id", egoProperties.getClientId())
+              .queryParam("client_secret", egoProperties.getClientSecret())
+              .build().toUri();
+
+      val response = restTemplate.postForEntity(requestUri, null, JsonNode.class);
+
+      if ((response.getStatusCode() != HttpStatus.OK
+              && response.getStatusCode() != HttpStatus.MULTI_STATUS)
+              || !response.hasBody()) {
+        return Optional.empty();
+      }
+
+      val accessToken = response.getBody().path("access_token").asText();
+      log.info(accessToken);
+      return Optional.of(accessToken);
+
+    } catch (Exception e) {
+      log.warn("Exception while fetching application JWT from Ego: {}", e.getMessage());
+      log.debug("Stacktrace for exception:", e);
+      return Optional.empty();
+    }
+  }
+
+  /**
+   * Checks token and email against Ego
    *
    * @param email Email provided by the user during authorization
    * @param token API Key that will be introspected by Ego
@@ -55,12 +128,18 @@ public class EgoApiKeyAuthenticator implements PasswordAuthenticator {
    */
   private boolean introspect(String email, String token) {
     try {
+      val introspectUri = UriComponentsBuilder
+        .fromHttpUrl(egoProperties.getEgoApiRootUrl())
+        .path("/o/check_api_key")
+        .queryParam("apiKey", token)
+        .build().toUri();
+
       val template = new RestTemplate();
       val response =
-          template.postForEntity(
-              egoProperties.getIntrospectionUri() + "?apiKey=" + token,
-              setupHttpEntity(egoProperties),
-              JsonNode.class);
+        template.postForEntity(
+          introspectUri,
+          new HttpEntity<Void>(null, getJwtAuthHeader()),
+          JsonNode.class);
 
       // Response is okay
       if ((response.getStatusCode() != HttpStatus.OK
@@ -86,7 +165,9 @@ public class EgoApiKeyAuthenticator implements PasswordAuthenticator {
       val scopes = new ArrayList<String>();
       scopesArrayNode.forEach(jsonNode -> scopes.add(jsonNode.asText()));
       for (val scope : egoProperties.getScopes()) {
+        log.debug("Looking for scope: {}", scope);
         if (!scopes.contains(scope)) {
+          log.debug("Missing scope: {}", scope);
           return false;
         }
       }
@@ -108,13 +189,20 @@ public class EgoApiKeyAuthenticator implements PasswordAuthenticator {
    */
   private boolean validateUser(String email, String userId) {
     try {
+
+      val userDetailsUri = UriComponentsBuilder
+              .fromHttpUrl(egoProperties.getEgoApiRootUrl())
+              .path("/users")
+              .path(userId)
+              .build().toUri();
+
       val template = new RestTemplate();
       val response =
-          template.exchange(
-              egoProperties.getUserInfoUri() + "/" + userId,
-              HttpMethod.GET,
-              setupHttpEntity(egoProperties),
-              JsonNode.class);
+              template.exchange(
+                      userDetailsUri,
+                      HttpMethod.GET,
+                      new HttpEntity<Void>(null, getJwtAuthHeader()),
+                      JsonNode.class);
 
       return email.equals(response.getBody().path("email").asText());
     } catch (Exception e) {
@@ -124,9 +212,20 @@ public class EgoApiKeyAuthenticator implements PasswordAuthenticator {
     }
   }
 
-  private static HttpEntity<Void> setupHttpEntity(EgoProperties properties) {
-    HttpHeaders headers = new HttpHeaders();
-    headers.setBasicAuth(properties.getClientId(), properties.getClientSecret());
-    return new HttpEntity<Void>(null, headers);
+  private HttpHeaders getBasicAuthHeader() {
+    val headers = new HttpHeaders();
+    headers.setBasicAuth(egoProperties.getClientId(), egoProperties.getClientSecret());
+    return headers;
+  }
+
+  private HttpHeaders getJwtAuthHeader() {
+    val headers = new HttpHeaders();
+    val token = getEgoToken();
+    if (token.isPresent()) {
+      headers.setBearerAuth(token.get());
+    } else {
+      log.warn("Unable to retrieve application JWT from Ego. Request validation will fail.");
+    }
+    return headers;
   }
 }

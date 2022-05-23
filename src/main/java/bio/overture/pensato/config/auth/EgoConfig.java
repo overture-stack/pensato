@@ -20,8 +20,7 @@ public class EgoConfig {
   public static class EgoProperties {
     String clientId;
     String clientSecret;
-    String introspectionUri;
-    String userInfoUri;
+    String egoApiRootUrl;
     List<String> scopes;
   }
 }
