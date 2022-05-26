@@ -192,7 +192,7 @@ public class EgoApiKeyAuthenticator implements PasswordAuthenticator {
 
       val userDetailsUri = UriComponentsBuilder
               .fromHttpUrl(egoProperties.getEgoApiRootUrl())
-              .path("/users")
+              .path("/users/")
               .path(userId)
               .build().toUri();
 
